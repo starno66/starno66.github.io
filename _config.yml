@@ -3,18 +3,18 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: 我的博客
+title: An Hao 的博客
 subtitle: ''
 description: ''
 keywords:
-author: 你的名字
+author: An Hao
 language: zh-CN
 timezone: ''
 
 # URL
 ## Set your site url here. For example, if you use GitHub Page, set url as 'https://username.github.io/project'
 ## 部署到 GitHub Pages 后，这里改成 https://你的用户名.github.io/
-url: https://yourname.github.io/
+url: https://starno66.github.io/
 permalink: :year/:month/:day/:title/
 permalink_defaults:
 pretty_urls:
