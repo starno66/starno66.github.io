@@ -525,15 +525,6 @@ body::after {
   filter: brightness(1.08);
 }
 
-/* The author card renders the theme's social icon row underneath the `Follow
-   Me` button, which means two links to the same GitHub profile stacked inside
-   one card. The row is hidden rather than deleted because the theme gates it on
-   the `social` list being non-empty -- the same list that draws the single
-   GitHub icon on the home hero, which is the one that stays. */
-#aside-content .card-info .card-info-social-icons {
-  display: none;
-}
-
 /* Sidebar buttons (the slide-out menu) get the brand gradient too. */
 #sidebar #sidebar-menus .sidebar-menu-item a:hover,
 #sidebar #site-name a:hover {

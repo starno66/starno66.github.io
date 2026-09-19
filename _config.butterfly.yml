@@ -45,8 +45,16 @@ code_blocks:
 # Social media links
 # Formal:
 #   icon: link || the description || color
+#
+# Left empty on purpose. The theme renders this list in two places: a single
+# icon centred on the home hero, which only appears below 769px wide -- i.e. on
+# phones, right under the subtitle -- and an icon row inside the author card
+# directly under the `Follow Me` button. Both pointed at the same GitHub
+# profile as that button, so the list would only add duplicate links. The button
+# in `aside.card_author.button` is the single GitHub entry point for the site;
+# putting an entry back here brings both icons back.
 social:
-  fab fa-github: https://github.com/starno66 || Github || '#24292e'
+  # fab fa-github: https://github.com/starno66 || Github || '#24292e'
   # fas fa-envelope: mailto:xxxxxx@gmail.com || Email || '#4a7dbe'
 
 # --------------------------------------
