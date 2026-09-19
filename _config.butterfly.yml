@@ -46,17 +46,19 @@ code_blocks:
 # Formal:
 #   icon: link || the description || color
 social:
-  # fab fa-github: https://github.com/xxxxx || Github || '#24292e'
+  fab fa-github: https://github.com/starno66 || Github || '#24292e'
   # fas fa-envelope: mailto:xxxxxx@gmail.com || Email || '#4a7dbe'
 
 # --------------------------------------
 # Image Settings
 # --------------------------------------
 
-favicon: /img/favicon.png
+favicon: /img/favicon.ico
 
 avatar:
-  img: /img/butterfly-icon.png
+  # Local copy of the GitHub avatar (github.com/starno66), 400x400 so it stays
+  # sharp on HiDPI screens and does not depend on GitHub's CDN at page load.
+  img: /img/avatar.jpg
   effect: false
 
 # Disable all banner images
@@ -145,7 +147,8 @@ post_meta:
 # The position of site info, eg: 300px/300em/300rem/10%
 index_site_info_top:
 # The height of top_img, eg: 300px/300em/300rem
-index_top_img_height:
+# Home banner only: 45vh leaves the first post card visible above the fold.
+index_top_img_height: 45vh
 
 # The subtitle on homepage
 subtitle:
@@ -165,8 +168,8 @@ subtitle:
   source: false
   # If you close the typewriter effect, the subtitle will only show the first line of sub
   sub:
-    - 记录学习与思考
-    - Stay hungry, stay foolish
+    - '(๑˃ᴗ˂)ﻭ♡'
+    - ret2win
 
 # Article layout on the homepage
 # 1: Cover on the left, info on the right
@@ -259,12 +262,14 @@ noticeOutdate:
 # --------------------------------------
 footer:
   nav:
+  # The two credit lines below are switched off, together with the footer band
+  # that carried them (see section 10 of source/css/blog-beautify.css).
   owner:
-    enable: true
+    enable: false
     since: 2026
   # Copyright of theme and framework
   copyright:
-    enable: true
+    enable: false
     version: true
   custom_text:
 
@@ -291,7 +296,7 @@ aside:
       enable: true
       icon: fab fa-github
       text: Follow Me
-      link: https://github.com/xxxxxx
+      link: https://github.com/starno66
   card_announcement:
     enable: true
     content: This is my Blog
@@ -1060,8 +1065,11 @@ css_prefix: true
 inject:
   head:
     # - <link rel="stylesheet" href="/xxx.css">
+    - <link rel="stylesheet" href="/css/blog-beautify.css">
   bottom:
     # - <script src="xxxx"></script>
+    - <script src="/js/geometric-bg.js"></script>
+    - <script src="/js/tab-title.js"></script>
 
 # CDN Settings
 # Don't modify the following settings unless you know how they work

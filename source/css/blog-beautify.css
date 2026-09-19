@@ -1,0 +1,648 @@
+/*!
+ * blog-beautify.css
+ *
+ * Visual layer for this Butterfly blog. Loaded last from `inject.head`, so it
+ * sits at the end of the cascade and can refine the theme without forking it.
+ *
+ * The page background is a stack of three fixed layers, ordered by `z-index`
+ * from the bottom up: the tinted gradient on `body`, the crayon-shinchan photo
+ * on `body::before`, a veil on `body::after`, and finally the animated geometry
+ * canvas (`/js/geometric-bg.js`) at `-1`. Everything above them is translucent,
+ * which is what ties the whole thing together:
+ *   1. Every large surface lets the layers below read through it.
+ *   2. Surfaces use `backdrop-filter` to frost whatever is behind them, which
+ *      keeps text legible while the picture and the shapes keep showing.
+ *
+ * Everything is driven by the token block below. Change a colour there and the
+ * header, cards, buttons, scrollbar and selection colour all follow.
+ */
+
+/* ------------------------------------------------------------------ *
+ * 1. Tokens
+ * ------------------------------------------------------------------ */
+
+:root {
+  /* Accents are shared with the geometry canvas palette. */
+  --accent-1: #49b1f5;
+  --accent-2: #00c4b6;
+  --accent-3: #7c83fd;
+
+  --hairline: rgba(73, 177, 245, 0.16);
+  --glass-edge: rgba(255, 255, 255, 0.55);
+  --glass-blur: 16px;
+
+  /* Hero tint. Deliberately neutral: the artwork keeps its own blue sky and
+     green field, with only a wash of near-black over it for the white title.
+     The wash fades to nothing at the bottom edge, so the banner dissolves into
+     the content below instead of ending in a visible block. */
+  --hero-veil: linear-gradient(
+      180deg,
+      rgba(6, 14, 24, 0.44) 0%,
+      rgba(6, 14, 24, 0.3) 38%,
+      rgba(6, 14, 24, 0.12) 72%,
+      rgba(6, 14, 24, 0) 100%
+    ),
+    radial-gradient(72% 58% at 50% 44%, rgba(6, 14, 24, 0.26), rgba(6, 14, 24, 0) 76%);
+
+  --page-tint: linear-gradient(165deg, #eaf4ff 0%, #f7fbff 42%, #ecfaf6 100%);
+
+  /* Photo wall. `crayon-shinchan.jpg` is a 1600x900 downsample of the original
+     artwork, small enough to serve as a first-paint background. It gets its own
+     fixed layer (section 2) rather than a `background` on `body`, so it stays
+     put underneath long articles instead of scrolling away with them. */
+  --bg-photo: url('/img/crayon-shinchan.jpg');
+  /* A little blur softens JPEG blocking once the picture is stretched across a
+     desktop viewport; the slight brightness lift keeps the pale artwork from
+     reading as grey. */
+  --bg-photo-filter: blur(2px) saturate(108%) brightness(1.02);
+  /* Veil between the photo and the animated geometry. Deliberately thin: the
+     picture is meant to stay recognisable, so the frosted cards carry the text
+     contrast instead of the backing. */
+  --bg-veil: linear-gradient(
+      180deg,
+      rgba(246, 251, 255, 0.24) 0%,
+      rgba(240, 248, 255, 0.36) 46%,
+      rgba(238, 250, 246, 0.3) 100%
+    ),
+    radial-gradient(60% 50% at 78% 8%, rgba(73, 177, 245, 0.12), transparent 70%),
+    radial-gradient(48% 42% at 12% 92%, rgba(0, 196, 182, 0.1), transparent 72%);
+  /* The wireframe canvas keeps running on top of the photo, just quietly:
+     crisp lines over a detailed illustration would read as noise. */
+  --geometry-opacity: 0.4;
+
+  /* Softer, tighter shadows than the theme default, which relies on a very
+     diffuse 6px-spread shadow that reads as a grey halo. */
+  --card-box-shadow: 0 14px 34px -18px rgba(7, 17, 27, 0.28), 0 2px 8px -4px rgba(7, 17, 27, 0.08);
+  --card-hover-box-shadow: 0 22px 46px -20px rgba(7, 17, 27, 0.34), 0 4px 12px -4px rgba(7, 17, 27, 0.12);
+
+  --card-bg: rgba(255, 255, 255, 0.68);
+  --global-bg: #eef6ff;
+  --scrollbar-color: var(--accent-1);
+}
+
+[data-theme='dark'] {
+  --hairline: rgba(96, 190, 255, 0.14);
+  --glass-edge: rgba(255, 255, 255, 0.08);
+
+  --hero-veil: linear-gradient(
+      180deg,
+      rgba(3, 8, 16, 0.5) 0%,
+      rgba(3, 8, 16, 0.34) 38%,
+      rgba(3, 8, 16, 0.14) 72%,
+      rgba(3, 8, 16, 0) 100%
+    ),
+    radial-gradient(72% 58% at 50% 44%, rgba(3, 8, 16, 0.28), rgba(3, 8, 16, 0) 76%);
+
+  --page-tint: linear-gradient(165deg, #0a0d14 0%, #0c1118 45%, #080f12 100%);
+
+  /* Night keeps the artwork but crushes it down. The picture is a bright daytime
+     scene, so it is dimmed at the filter level *and* veiled; that combination is
+     what stops it glowing behind the dark cards. */
+  --bg-photo-filter: blur(2px) saturate(102%) brightness(0.4);
+  --bg-veil: linear-gradient(
+      180deg,
+      rgba(5, 11, 20, 0.42) 0%,
+      rgba(6, 14, 26, 0.56) 46%,
+      rgba(4, 12, 22, 0.6) 100%
+    ),
+    radial-gradient(60% 50% at 78% 8%, rgba(73, 177, 245, 0.1), transparent 70%),
+    radial-gradient(48% 42% at 12% 92%, rgba(0, 196, 182, 0.08), transparent 72%);
+  --geometry-opacity: 0.5;
+
+  --card-box-shadow: 0 16px 38px -20px rgba(0, 0, 0, 0.85), 0 2px 10px -4px rgba(0, 0, 0, 0.5);
+  --card-hover-box-shadow: 0 24px 50px -22px rgba(0, 0, 0, 0.9), 0 4px 14px -4px rgba(0, 0, 0, 0.55);
+
+  --card-bg: rgba(18, 20, 26, 0.62);
+  --global-bg: #0a0d12;
+}
+
+/* ------------------------------------------------------------------ *
+ * 2. Page background
+ * ------------------------------------------------------------------ */
+
+/* `body` has no ancestor background to hide behind, so this gradient is
+   propagated to the viewport canvas and paints underneath everything else. The
+   photo sits on top of it; if the image ever fails to load, the page still falls
+   back to the tinted gradient instead of a flat colour. */
+body {
+  background: var(--global-bg);
+  background-image: var(--page-tint);
+  background-attachment: fixed;
+}
+
+/* The photo wall.
+ *
+ * It is a fixed pseudo-element rather than a `background` on `body` because
+ * mobile Safari ignores `background-attachment: fixed` and would otherwise
+ * smear the picture down the whole scroll length of the page.
+ *
+ * The overscan matters: `blur()` in `--bg-photo-filter` bleeds the image's own
+ * edges outward into transparency, and without the extra 40px that fade would
+ * show up inside the viewport as a pale frame. */
+body::before {
+  position: fixed;
+  top: -40px;
+  left: -40px;
+  z-index: -3;
+  width: calc(100% + 80px);
+  height: calc(100% + 80px);
+  background-image: var(--bg-photo);
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  content: '';
+  filter: var(--bg-photo-filter);
+  pointer-events: none;
+}
+
+/* The veil, sandwiched between the photo and the geometry canvas. Besides
+   softening the artwork it is the safety net for the pages that put text
+   straight onto the background (archives, tag and category lists) rather than
+   inside a frosted card. */
+body::after {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  background-image: var(--bg-veil);
+  content: '';
+  pointer-events: none;
+}
+
+/* Drawn last of the three backing layers, so the wireframes drift over the
+   illustration at a low opacity instead of fighting it. */
+#geometric-bg {
+  opacity: var(--geometry-opacity);
+  transition: opacity 0.4s ease;
+}
+
+/* ------------------------------------------------------------------ *
+ * 3. Glass surfaces
+ * ------------------------------------------------------------------ */
+
+.layout > div:first-child:not(.nc),
+#recent-posts .recent-post-item,
+#aside-content .card-widget {
+  border: 1px solid var(--glass-edge);
+}
+
+@media (min-width: 769px) {
+  .layout > div:first-child:not(.nc),
+  #recent-posts .recent-post-item,
+  #aside-content .card-widget {
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  }
+}
+
+/* On phones, skip the blur (it is the most expensive part) and lean on a more
+   opaque surface so text contrast never depends on what is behind it. */
+@media (max-width: 768px) {
+  :root {
+    --card-bg: rgba(255, 255, 255, 0.86);
+  }
+
+  [data-theme='dark'] {
+    --card-bg: rgba(20, 22, 28, 0.86);
+  }
+}
+
+/* The article container keeps its own padding, so the border is the only thing
+   that needs a nudge to align with the rounded corners. */
+#post,
+#page {
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------------ *
+ * 4. Header / hero
+ * ------------------------------------------------------------------ */
+
+/* The theme paints a flat brand-blue banner and parks its own mask on top. The
+   veil below replaces that colour; both it and the mask are neutral and fade out
+   towards the bottom, so nothing reads as a slab behind the title. */
+#page-header.full_page,
+#page-header.not-home-page,
+#page-header.post-bg {
+  background-color: transparent;
+  background-image: var(--hero-veil);
+  /* The theme pins the banner background to the viewport, which was fine for a
+     flat tint but makes a gradient slide against the hero as it scrolls. */
+  background-attachment: scroll;
+}
+
+/* Kept as a light top scrim only: it gives the transparent nav bar something to
+   sit on while the title band keeps its contrast from the radial above. */
+#page-header:not(.not-top-img)::before {
+  background: linear-gradient(
+    180deg,
+    rgba(4, 12, 22, 0.18) 0%,
+    rgba(4, 12, 22, 0.06) 34%,
+    rgba(4, 12, 22, 0) 62%
+  );
+}
+
+#site-title,
+#page-site-info #site-title,
+#post-info .post-title {
+  text-shadow: 0 2px 22px rgba(3, 12, 24, 0.55);
+  letter-spacing: 0.02em;
+}
+
+/* Gradient-filled site title. `text-shadow` has to go, because a shadow paints
+   underneath the glyphs and would show through the transparent fill. */
+#site-title {
+  text-shadow: none;
+  background-image: linear-gradient(
+    110deg,
+    #ffffff 0%,
+    #dff0ff 34%,
+    #a8ebe4 62%,
+    #ffffff 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 6px 24px rgba(3, 14, 28, 0.55));
+}
+
+#site-subtitle {
+  text-shadow: 0 2px 14px rgba(3, 12, 24, 0.5);
+  opacity: 0.95;
+}
+
+/* The brand hairline that used to run along the bottom of the banner is gone:
+   it drew exactly the hard "block" edge this pass is removing. */
+
+/* The theme's bouncing scroll cue is dropped: it exists to tell visitors that
+   the hero is hiding content below the fold, which stops being true once the
+   hero is only 45vh. */
+#scroll-down {
+  display: none;
+}
+
+/* The theme parks the site info at a fixed 43% of the hero height, a value
+   tuned for a full-screen banner. Centring it instead keeps the title balanced
+   at whatever height the hero is set to in `_config.butterfly.yml`. */
+#page-header.full_page #site-info {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* ------------------------------------------------------------------ *
+ * 5. Navigation
+ * ------------------------------------------------------------------ */
+
+/* Frosted bar once the nav detaches from the hero and floats over content. */
+#page-header.not-top-img #nav,
+#page-header.nav-fixed #nav {
+  background: rgba(255, 255, 255, 0.72);
+  border-bottom: 1px solid rgba(73, 177, 245, 0.14);
+  box-shadow: 0 10px 30px -18px rgba(7, 17, 27, 0.45);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+}
+
+[data-theme='dark'] #page-header.not-top-img #nav,
+[data-theme='dark'] #page-header.nav-fixed #nav {
+  background: rgba(14, 18, 26, 0.72);
+  border-bottom-color: rgba(96, 190, 255, 0.12);
+  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.8);
+}
+
+#nav .site-name {
+  transition: color 0.3s ease;
+}
+
+#nav .menus_items .menus_item > a,
+#nav .menus_items .menus_item > span {
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+/* Animated underline on menu items. */
+#nav .menus_items .menus_item > a::after,
+#nav .menus_items .menus_item > span::after {
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+  content: '';
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: scaleX(0.2);
+}
+
+#nav .menus_items .menus_item > a:hover::after,
+#nav .menus_items .menus_item > span:hover::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+/* Dropdown panels get the same frosted treatment as the cards. */
+#nav .menus_items .menus_item .menus_item_child {
+  border: 1px solid var(--glass-edge);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  backdrop-filter: blur(14px) saturate(150%);
+}
+
+/* ------------------------------------------------------------------ *
+ * 6. Home page article cards
+ * ------------------------------------------------------------------ */
+
+#recent-posts .recent-post-item {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease,
+    border-color 0.35s ease;
+}
+
+#recent-posts .recent-post-item:hover {
+  border-color: rgba(73, 177, 245, 0.34);
+  transform: translateY(-4px);
+}
+
+/* Gradient rail that grows out of the left edge on hover. */
+#recent-posts .recent-post-item::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--accent-1), var(--accent-2));
+  content: '';
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+#recent-posts .recent-post-item:hover::before {
+  opacity: 1;
+}
+
+#recent-posts .recent-post-info.no-cover {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#recent-posts .recent-post-item:hover .recent-post-info.no-cover {
+  transform: translateX(4px);
+}
+
+#recent-posts .article-title {
+  transition: color 0.25s ease, letter-spacing 0.25s ease;
+}
+
+#recent-posts .recent-post-item:hover .article-title {
+  color: var(--accent-1);
+}
+
+#recent-posts .article-meta-wrap .article-meta__categories:hover,
+#recent-posts .article-meta-wrap a:hover {
+  color: var(--accent-1);
+}
+
+/* ------------------------------------------------------------------ *
+ * 7. Article content
+ * ------------------------------------------------------------------ */
+
+#article-container {
+  word-break: break-word;
+}
+
+/* Fading gradient rule under section headings. */
+#article-container h2 {
+  padding-bottom: 10px;
+  background-image: linear-gradient(
+    90deg,
+    rgba(73, 177, 245, 0.6),
+    rgba(0, 196, 182, 0.3) 42%,
+    rgba(0, 196, 182, 0) 100%
+  );
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% 2px;
+}
+
+#article-container h3 {
+  color: var(--accent-1);
+}
+
+[data-theme='dark'] #article-container h3 {
+  color: #7fc7f5;
+}
+
+#article-container a {
+  position: relative;
+  color: var(--accent-1);
+  text-decoration: none;
+  transition: color 0.25s ease;
+}
+
+#article-container a:hover {
+  color: var(--accent-2);
+  text-decoration: none;
+}
+
+#article-container a:not(.headerlink):not(.fancybox)::after {
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  content: '';
+  opacity: 0.35;
+  transition: opacity 0.25s ease;
+}
+
+#article-container a:not(.headerlink):not(.fancybox):hover::after {
+  opacity: 0.9;
+}
+
+#article-container blockquote {
+  border-left: 4px solid var(--accent-1);
+  border-radius: 0 8px 8px 0;
+}
+
+#article-container figure.highlight,
+#article-container pre {
+  border-radius: 10px;
+}
+
+#article-container figure.highlight {
+  box-shadow: 0 12px 28px -20px rgba(7, 17, 27, 0.6);
+}
+
+#article-container img {
+  border-radius: 10px;
+  box-shadow: 0 16px 34px -22px rgba(7, 17, 27, 0.6);
+}
+
+/* Inline code picks up the accent instead of the theme's coral. */
+#article-container code:not([class]) {
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: rgba(73, 177, 245, 0.1);
+  color: #2b7cb5;
+}
+
+[data-theme='dark'] #article-container code:not([class]) {
+  background: rgba(96, 190, 255, 0.12);
+  color: #8fcbf0;
+}
+
+/* ------------------------------------------------------------------ *
+ * 8. Aside widgets
+ * ------------------------------------------------------------------ */
+
+#aside-content .card-widget {
+  transition: box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+#aside-content .card-widget:hover {
+  border-color: rgba(73, 177, 245, 0.3);
+}
+
+#aside-content .item-headline {
+  position: relative;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.avatar-img {
+  box-shadow: 0 0 0 3px var(--card-bg), 0 0 0 5px rgba(73, 177, 245, 0.28),
+    0 14px 30px -16px rgba(7, 17, 27, 0.45);
+}
+
+#aside-content .card-info #card-info-btn {
+  background-image: linear-gradient(120deg, var(--accent-1), var(--accent-2));
+}
+
+#aside-content .card-info #card-info-btn:hover {
+  filter: brightness(1.08);
+}
+
+/* The author card renders the theme's social icon row underneath the `Follow
+   Me` button, which means two links to the same GitHub profile stacked inside
+   one card. The row is hidden rather than deleted because the theme gates it on
+   the `social` list being non-empty -- the same list that draws the single
+   GitHub icon on the home hero, which is the one that stays. */
+#aside-content .card-info .card-info-social-icons {
+  display: none;
+}
+
+/* Sidebar buttons (the slide-out menu) get the brand gradient too. */
+#sidebar #sidebar-menus .sidebar-menu-item a:hover,
+#sidebar #site-name a:hover {
+  color: var(--accent-1);
+}
+
+/* ------------------------------------------------------------------ *
+ * 9. Right-side buttons
+ * ------------------------------------------------------------------ */
+
+#rightside > div > button,
+#rightside > div > a {
+  border: 1px solid var(--glass-edge);
+  background-color: var(--card-bg);
+  color: var(--accent-1);
+  box-shadow: 0 10px 24px -16px rgba(7, 17, 27, 0.6);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  backdrop-filter: blur(12px) saturate(150%);
+}
+
+#rightside > div > button:hover,
+#rightside > div > a:hover {
+  border-color: transparent;
+  background-color: var(--accent-1);
+  background-image: linear-gradient(120deg, var(--accent-1), var(--accent-2));
+  color: #ffffff;
+}
+
+[data-theme='dark'] #rightside > div > button,
+[data-theme='dark'] #rightside > div > a {
+  color: #8fcbf0;
+}
+
+/* ------------------------------------------------------------------ *
+ * 10. Footer
+ * ------------------------------------------------------------------ */
+
+/* The footer used to be a dark glass slab carrying the theme's credits. Both
+   credit lines (`footer.owner` and `footer.copyright`) are switched off in
+   `_config.butterfly.yml`, which leaves the element with nothing inside it, so
+   the slab, its top hairline and the wrapper's 40px of padding are dropped too
+   -- otherwise they would remain as an empty tinted band across the bottom of
+   every page. Re-enabling either credit line in the config means restoring that
+   padding here. */
+#footer {
+  border-top: 0;
+  background-color: transparent;
+  background-image: none;
+}
+
+#footer .footer-other {
+  padding: 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * 11. Scrollbar and selection
+ * ------------------------------------------------------------------ */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-1) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+*::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-color: var(--accent-1);
+  background-image: linear-gradient(180deg, var(--accent-1), var(--accent-2));
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-image: linear-gradient(180deg, var(--accent-2), var(--accent-3));
+}
+
+*::selection {
+  background: rgba(73, 177, 245, 0.28);
+  color: inherit;
+}
+
+[data-theme='dark'] *::selection {
+  background: rgba(96, 190, 255, 0.3);
+  color: inherit;
+}
+
+/* ------------------------------------------------------------------ *
+ * 12. Motion preferences
+ * ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  #recent-posts .recent-post-item:hover,
+  #recent-posts .recent-post-item:hover .recent-post-info.no-cover {
+    transform: none;
+  }
+}
