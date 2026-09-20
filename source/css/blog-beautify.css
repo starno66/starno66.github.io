@@ -4,14 +4,20 @@
  * Visual layer for this Butterfly blog. Loaded last from `inject.head`, so it
  * sits at the end of the cascade and can refine the theme without forking it.
  *
- * The page background is a stack of three fixed layers, ordered by `z-index`
- * from the bottom up: the tinted gradient on `body`, the crayon-shinchan photo
- * on `body::before`, a veil on `body::after`, and finally the animated geometry
- * canvas (`/js/geometric-bg.js`) at `-1`. Everything above them is translucent,
- * which is what ties the whole thing together:
+ * The page background is a stack of fixed layers, ordered by `z-index` from the
+ * bottom up: the tinted gradient on `body`, the evening-lamp photo on
+ * `body::before`, a thin veil on `body::after`, and the animated line canvas
+ * (the theme's `canvas_nest`, configured in `_config.butterfly.yml`) at `-2`.
+ * Everything above them is translucent, which is what ties the whole thing
+ * together:
  *   1. Every large surface lets the layers below read through it.
  *   2. Surfaces use `backdrop-filter` to frost whatever is behind them, which
- *      keeps text legible while the picture and the shapes keep showing.
+ *      keeps text legible while the picture and the animated lines keep showing.
+ *
+ * The background half of that stack is deliberately identical in light and dark
+ * mode: the artwork never dims. Only the surfaces change -- `--card-bg` and the
+ * shadows flip from light glass to dark glass -- so switching modes recolours
+ * the panels while the picture underneath stays exactly as bright as it was.
  *
  * Everything is driven by the token block below. Change a colour there and the
  * header, cards, buttons, scrollbar and selection colour all follow.
@@ -22,97 +28,102 @@
  * ------------------------------------------------------------------ */
 
 :root {
-  /* Accents are shared with the geometry canvas palette. */
-  --accent-1: #49b1f5;
-  --accent-2: #00c4b6;
-  --accent-3: #7c83fd;
+  /* Brand palette. The theme compiles its own colour once and uses it in both
+     modes, so these have to hold up on white glass *and* on the dark panels:
+     they are the stock blue and teal taken deep enough to clear roughly 4.5:1
+     either way. The stock light blue (#49b1f5) only reached about 2.2:1
+     against a frosted card, which is why accent text read as washed out. The
+     `-rgb` twins feed the translucent washes (hairlines, selection, tints). */
+  --accent-1: #2b74e0;
+  --accent-2: #0e8f80;
+  --accent-3: #7c3aed;
+  --accent-1-rgb: 43 116 224;
+  --accent-2-rgb: 14 143 128;
 
-  --hairline: rgba(73, 177, 245, 0.16);
+  /* The same blue doing duty as text or an icon rather than as a fill, which
+     wants a touch more depth on the white glass. The dark block below lifts it
+     again, since the panels it sits on there are dark glass. */
+  --accent-ink: #1f5fd0;
+  --accent-ink-rgb: 31 95 208;
+
+  --hairline: rgb(var(--accent-1-rgb) / 0.18);
   --glass-edge: rgba(255, 255, 255, 0.55);
   --glass-blur: 16px;
 
-  /* Hero tint. Deliberately neutral: the artwork keeps its own blue sky and
-     green field, with only a wash of near-black over it for the white title.
-     The wash fades to nothing at the bottom edge, so the banner dissolves into
-     the content below instead of ending in a visible block. */
+  /* Hero tint. The artwork is already a night scene, so this is a light wash
+     where a bright picture would need a heavy one. It keeps the white title and
+     the near-white nav readable, and fades to nothing at the bottom edge so the
+     banner dissolves into the content below instead of ending in a visible
+     block. */
   --hero-veil: linear-gradient(
       180deg,
-      rgba(6, 14, 24, 0.44) 0%,
-      rgba(6, 14, 24, 0.3) 38%,
-      rgba(6, 14, 24, 0.12) 72%,
-      rgba(6, 14, 24, 0) 100%
+      rgba(5, 12, 24, 0.34) 0%,
+      rgba(5, 12, 24, 0.16) 38%,
+      rgba(5, 12, 24, 0.05) 72%,
+      rgba(5, 12, 24, 0) 100%
     ),
-    radial-gradient(72% 58% at 50% 44%, rgba(6, 14, 24, 0.26), rgba(6, 14, 24, 0) 76%);
+    radial-gradient(72% 58% at 50% 44%, rgba(5, 12, 24, 0.18), rgba(5, 12, 24, 0) 78%);
 
   --page-tint: linear-gradient(165deg, #eaf4ff 0%, #f7fbff 42%, #ecfaf6 100%);
 
-  /* Photo wall. `crayon-shinchan.jpg` is a 1600x900 downsample of the original
-     artwork, small enough to serve as a first-paint background. It gets its own
-     fixed layer (section 2) rather than a `background` on `body`, so it stays
-     put underneath long articles instead of scrolling away with them. */
-  --bg-photo: url('/img/crayon-shinchan.jpg');
-  /* A little blur softens JPEG blocking once the picture is stretched across a
-     desktop viewport; the slight brightness lift keeps the pale artwork from
-     reading as grey. */
-  --bg-photo-filter: blur(2px) saturate(108%) brightness(1.02);
-  /* Veil between the photo and the animated geometry. Deliberately thin: the
-     picture is meant to stay recognisable, so the frosted cards carry the text
-     contrast instead of the backing. */
+  /* Photo wall. `evening-lamp.jpg` is a 1920x1280 re-encode of the original
+     7500x5000 artwork -- about 200 KB, small enough to serve as a first-paint
+     background. It gets its own fixed layer (section 2) rather than a
+     `background` on `body`, so it stays put underneath long articles instead of
+     scrolling away with them. */
+  --bg-photo: url('/img/evening-lamp.jpg');
+  /* The blur hides JPEG blocking once the picture is stretched across a desktop
+     viewport; the slight brightness lift keeps the night sky from reading as
+     mud. */
+  --bg-photo-filter: blur(3px) saturate(114%) brightness(1.06);
+  /* Veil between the photo and the animated lines. Deliberately thin and cool:
+     the picture is meant to stay a recognisable night scene, so the frosted
+     cards carry the text contrast instead of the backing. The deeper hues need
+     a lower alpha than the light blue they replace to leave the artwork at the
+     same brightness. */
   --bg-veil: linear-gradient(
       180deg,
-      rgba(246, 251, 255, 0.24) 0%,
-      rgba(240, 248, 255, 0.36) 46%,
-      rgba(238, 250, 246, 0.3) 100%
+      rgba(6, 14, 28, 0.2) 0%,
+      rgba(6, 14, 28, 0.07) 46%,
+      rgba(6, 14, 28, 0.18) 100%
     ),
-    radial-gradient(60% 50% at 78% 8%, rgba(73, 177, 245, 0.12), transparent 70%),
-    radial-gradient(48% 42% at 12% 92%, rgba(0, 196, 182, 0.1), transparent 72%);
-  /* The wireframe canvas keeps running on top of the photo, just quietly:
-     crisp lines over a detailed illustration would read as noise. */
-  --geometry-opacity: 0.4;
+    radial-gradient(60% 50% at 78% 8%, rgb(var(--accent-1-rgb) / 0.09), transparent 70%),
+    radial-gradient(48% 42% at 12% 92%, rgb(var(--accent-2-rgb) / 0.08), transparent 72%);
 
   /* Softer, tighter shadows than the theme default, which relies on a very
      diffuse 6px-spread shadow that reads as a grey halo. */
   --card-box-shadow: 0 14px 34px -18px rgba(7, 17, 27, 0.28), 0 2px 8px -4px rgba(7, 17, 27, 0.08);
   --card-hover-box-shadow: 0 22px 46px -20px rgba(7, 17, 27, 0.34), 0 4px 12px -4px rgba(7, 17, 27, 0.12);
 
-  --card-bg: rgba(255, 255, 255, 0.68);
+  --card-bg: rgba(255, 255, 255, 0.74);
   --global-bg: #eef6ff;
   --scrollbar-color: var(--accent-1);
 }
 
+/* Night mode stops at the surfaces. Nothing in this block touches the photo,
+   the veil, the page tint or the hero tint, so the artwork stays exactly as
+   bright as it is in light mode and the page is recoloured by its panels
+   alone -- which is the point: the picture is the one thing that does not
+   change. */
 [data-theme='dark'] {
-  --hairline: rgba(96, 190, 255, 0.14);
-  --glass-edge: rgba(255, 255, 255, 0.08);
+  /* Accent text and icons flip to a light tint of the same hue: the deep mix
+     above would only reach about 3.6:1 on dark glass, which is the problem it
+     was chosen to fix on the light side. */
+  --accent-ink: #82b8ff;
+  --accent-ink-rgb: 130 184 255;
 
-  --hero-veil: linear-gradient(
-      180deg,
-      rgba(3, 8, 16, 0.5) 0%,
-      rgba(3, 8, 16, 0.34) 38%,
-      rgba(3, 8, 16, 0.14) 72%,
-      rgba(3, 8, 16, 0) 100%
-    ),
-    radial-gradient(72% 58% at 50% 44%, rgba(3, 8, 16, 0.28), rgba(3, 8, 16, 0) 76%);
+  --hairline: rgb(var(--accent-ink-rgb) / 0.16);
+  --glass-edge: rgba(255, 255, 255, 0.1);
 
-  --page-tint: linear-gradient(165deg, #0a0d14 0%, #0c1118 45%, #080f12 100%);
-
-  /* Night keeps the artwork but crushes it down. The picture is a bright daytime
-     scene, so it is dimmed at the filter level *and* veiled; that combination is
-     what stops it glowing behind the dark cards. */
-  --bg-photo-filter: blur(2px) saturate(102%) brightness(0.4);
-  --bg-veil: linear-gradient(
-      180deg,
-      rgba(5, 11, 20, 0.42) 0%,
-      rgba(6, 14, 26, 0.56) 46%,
-      rgba(4, 12, 22, 0.6) 100%
-    ),
-    radial-gradient(60% 50% at 78% 8%, rgba(73, 177, 245, 0.1), transparent 70%),
-    radial-gradient(48% 42% at 12% 92%, rgba(0, 196, 182, 0.08), transparent 72%);
-  --geometry-opacity: 0.5;
+  /* A touch denser than the light-mode glass, and with a hint more blue: the
+     dark panels have to hold their own against a background that no longer
+     dims for them. */
+  --card-bg: rgba(16, 19, 26, 0.78);
 
   --card-box-shadow: 0 16px 38px -20px rgba(0, 0, 0, 0.85), 0 2px 10px -4px rgba(0, 0, 0, 0.5);
   --card-hover-box-shadow: 0 24px 50px -22px rgba(0, 0, 0, 0.9), 0 4px 14px -4px rgba(0, 0, 0, 0.55);
 
-  --card-bg: rgba(18, 20, 26, 0.62);
+  /* Sits behind the page tint, so it is only ever seen if the photo fails. */
   --global-bg: #0a0d12;
 }
 
@@ -155,10 +166,12 @@ body::before {
   pointer-events: none;
 }
 
-/* The veil, sandwiched between the photo and the geometry canvas. Besides
-   softening the artwork it is the safety net for the pages that put text
-   straight onto the background (archives, tag and category lists) rather than
-   inside a frosted card. */
+/* The veil, the last of the photo layers. At `z-index: -2` it paints over the
+   line canvas, which is drawn at the same level earlier in the tree: that keeps
+   200 links a step back from the reader instead of letting them sit in front of
+   the picture. Besides softening the artwork it is the safety net for the pages
+   that put text straight onto the background (archives, tag and category
+   lists) rather than inside a frosted card. */
 body::after {
   position: fixed;
   top: 0;
@@ -169,13 +182,6 @@ body::after {
   background-image: var(--bg-veil);
   content: '';
   pointer-events: none;
-}
-
-/* Drawn last of the three backing layers, so the wireframes drift over the
-   illustration at a low opacity instead of fighting it. */
-#geometric-bg {
-  opacity: var(--geometry-opacity);
-  transition: opacity 0.4s ease;
 }
 
 /* ------------------------------------------------------------------ *
@@ -299,7 +305,7 @@ body::after {
 #page-header.not-top-img #nav,
 #page-header.nav-fixed #nav {
   background: rgba(255, 255, 255, 0.72);
-  border-bottom: 1px solid rgba(73, 177, 245, 0.14);
+  border-bottom: 1px solid rgb(var(--accent-1-rgb) / 0.16);
   box-shadow: 0 10px 30px -18px rgba(7, 17, 27, 0.45);
   -webkit-backdrop-filter: blur(14px) saturate(160%);
   backdrop-filter: blur(14px) saturate(160%);
@@ -361,7 +367,7 @@ body::after {
 }
 
 #recent-posts .recent-post-item:hover {
-  border-color: rgba(73, 177, 245, 0.34);
+  border-color: rgb(var(--accent-1-rgb) / 0.4);
   transform: translateY(-4px);
 }
 
@@ -396,12 +402,12 @@ body::after {
 }
 
 #recent-posts .recent-post-item:hover .article-title {
-  color: var(--accent-1);
+  color: var(--accent-ink);
 }
 
 #recent-posts .article-meta-wrap .article-meta__categories:hover,
 #recent-posts .article-meta-wrap a:hover {
-  color: var(--accent-1);
+  color: var(--accent-ink);
 }
 
 /* ------------------------------------------------------------------ *
@@ -417,9 +423,9 @@ body::after {
   padding-bottom: 10px;
   background-image: linear-gradient(
     90deg,
-    rgba(73, 177, 245, 0.6),
-    rgba(0, 196, 182, 0.3) 42%,
-    rgba(0, 196, 182, 0) 100%
+    rgb(var(--accent-1-rgb) / 0.7),
+    rgb(var(--accent-2-rgb) / 0.36) 42%,
+    rgb(var(--accent-2-rgb) / 0) 100%
   );
   background-repeat: no-repeat;
   background-position: 0 100%;
@@ -427,16 +433,12 @@ body::after {
 }
 
 #article-container h3 {
-  color: var(--accent-1);
-}
-
-[data-theme='dark'] #article-container h3 {
-  color: #7fc7f5;
+  color: var(--accent-ink);
 }
 
 #article-container a {
   position: relative;
-  color: var(--accent-1);
+  color: var(--accent-ink);
   text-decoration: none;
   transition: color 0.25s ease;
 }
@@ -485,13 +487,12 @@ body::after {
 #article-container code:not([class]) {
   padding: 2px 6px;
   border-radius: 5px;
-  background: rgba(73, 177, 245, 0.1);
-  color: #2b7cb5;
+  background: rgb(var(--accent-1-rgb) / 0.1);
+  color: var(--accent-ink);
 }
 
 [data-theme='dark'] #article-container code:not([class]) {
-  background: rgba(96, 190, 255, 0.12);
-  color: #8fcbf0;
+  background: rgb(var(--accent-ink-rgb) / 0.14);
 }
 
 /* ------------------------------------------------------------------ *
@@ -503,7 +504,7 @@ body::after {
 }
 
 #aside-content .card-widget:hover {
-  border-color: rgba(73, 177, 245, 0.3);
+  border-color: rgb(var(--accent-1-rgb) / 0.34);
 }
 
 #aside-content .item-headline {
@@ -513,7 +514,7 @@ body::after {
 }
 
 .avatar-img {
-  box-shadow: 0 0 0 3px var(--card-bg), 0 0 0 5px rgba(73, 177, 245, 0.28),
+  box-shadow: 0 0 0 3px var(--card-bg), 0 0 0 5px rgb(var(--accent-1-rgb) / 0.3),
     0 14px 30px -16px rgba(7, 17, 27, 0.45);
 }
 
@@ -525,10 +526,10 @@ body::after {
   filter: brightness(1.08);
 }
 
-/* Sidebar buttons (the slide-out menu) get the brand gradient too. */
+/* Sidebar buttons (the slide-out menu) get the brand colour too. */
 #sidebar #sidebar-menus .sidebar-menu-item a:hover,
 #sidebar #site-name a:hover {
-  color: var(--accent-1);
+  color: var(--accent-ink);
 }
 
 /* ------------------------------------------------------------------ *
@@ -539,7 +540,7 @@ body::after {
 #rightside > div > a {
   border: 1px solid var(--glass-edge);
   background-color: var(--card-bg);
-  color: var(--accent-1);
+  color: var(--accent-ink);
   box-shadow: 0 10px 24px -16px rgba(7, 17, 27, 0.6);
   -webkit-backdrop-filter: blur(12px) saturate(150%);
   backdrop-filter: blur(12px) saturate(150%);
@@ -551,11 +552,6 @@ body::after {
   background-color: var(--accent-1);
   background-image: linear-gradient(120deg, var(--accent-1), var(--accent-2));
   color: #ffffff;
-}
-
-[data-theme='dark'] #rightside > div > button,
-[data-theme='dark'] #rightside > div > a {
-  color: #8fcbf0;
 }
 
 /* ------------------------------------------------------------------ *
@@ -610,12 +606,12 @@ body::after {
 }
 
 *::selection {
-  background: rgba(73, 177, 245, 0.28);
+  background: rgb(var(--accent-1-rgb) / 0.3);
   color: inherit;
 }
 
 [data-theme='dark'] *::selection {
-  background: rgba(96, 190, 255, 0.3);
+  background: rgb(var(--accent-ink-rgb) / 0.32);
   color: inherit;
 }
 
