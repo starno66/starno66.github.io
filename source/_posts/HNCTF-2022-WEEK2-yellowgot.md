@@ -112,7 +112,7 @@ int getnumber()
 
 可以得出如下关键信息：
 
-- 题目启用了`open`，`read`，`write`，`execve`不可用，需要使用orw技术
+- 题目启用了`open`，`read`，`write`。`execve`不可用，需要使用orw技术
 - 题目启用了fd限制，`read`的文件描述符必须是0，而在传统orw中，调用`open`过后`read`的文件描述符通常为3。Linux 内核在分配文件描述符时遵循一个简单规则：**总是返回当前进程中最小的、未被使用的文件描述符**。因此我们需要先关闭标准输入（fd 0），然后打开 flag 文件，让 `open` 返回 fd 0
 - 题目启用了`mmap`，这意味着我们可以调用`mmap`去开辟一段可执行的空间写入shellcode
 
