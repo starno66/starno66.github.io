@@ -116,7 +116,7 @@ int getnumber()
 - 题目启用了fd限制，`read`的文件描述符必须是0，而在传统orw中，调用`open`过后`read`的文件描述符通常为3。Linux 内核在分配文件描述符时遵循一个简单规则：**总是返回当前进程中最小的、未被使用的文件描述符**。因此我们需要先关闭标准输入（fd 0），然后打开 flag 文件，让 `open` 返回 fd 0
 - 题目启用了`mmap`，这意味着我们可以调用`mmap`去开辟一段可执行的空间写入shellcode
 
-现在我们有了两种思路：一、构造ROP链进行orw。二、ret2shellcode。而在现代版本的libc中，`open` 的 glibc 包装函数使用了 `openat` 系统调用，而非内核的 `open` 系统调用，**如果我们通过构造ROP链进行`open`的调用，我们实际上是调用了`openat`，会被沙箱直接KELL**。因此，我们使用ret2shellcode。
+现在我们有了两种思路：一、构造ROP链进行orw。二、ret2shellcode。而在现代版本的libc中，`open` 的 glibc 包装函数使用了 `openat` 系统调用，而非内核的 `open` 系统调用，**如果我们通过构造ROP链进行`open`的调用，我们实际上是调用了`openat`，会被沙箱直接KILL**。因此，我们使用ret2shellcode。
 
 exp总体思路如下：
 
