@@ -185,7 +185,37 @@ body::after {
 }
 
 /* ------------------------------------------------------------------ *
- * 3. Glass surfaces
+ * 3. Layout width
+ * ------------------------------------------------------------------ */
+
+/* The theme sizes the shell for a 1200px page split 74/26 between the article
+   and the aside. That leaves the text column at 784px on a desktop screen
+   however wide the monitor is, which is cramped for a writeup whose code blocks
+   run past 100 characters. Raising the cap to 1500px hands the column about a
+   quarter more room at 1920px (784px -> 1006px) and leaves the sidebar at the
+   width the theme's cards were drawn for, since the 74/26 split is untouched.
+
+   Single-column mode, the right-side switch button, needs no rule of its own:
+   it drops the aside and widens the article to 80% of the shell, so the column
+   lands at 1094px there -- still the wider of the two.
+
+   The media query restates the theme's own step-up. From 2000px up the theme
+   swaps its flat 1200px cap for 60% of the viewport, 2000px being the width at
+   which 60% reaches 1200px. With the cap at 1500px that crossing moves to
+   2500px, so the proportional rule moves with it; the flat cap stays the wider
+   of the two everywhere below. */
+.layout {
+  max-width: 1500px;
+}
+
+@media screen and (min-width: 2500px) {
+  .layout {
+    max-width: 60%;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * 4. Glass surfaces
  * ------------------------------------------------------------------ */
 
 .layout > div:first-child:not(.nc),
@@ -223,7 +253,7 @@ body::after {
 }
 
 /* ------------------------------------------------------------------ *
- * 4. Header / hero
+ * 5. Header / hero
  * ------------------------------------------------------------------ */
 
 /* The theme paints a flat brand-blue banner and parks its own mask on top. The
@@ -298,7 +328,7 @@ body::after {
 }
 
 /* ------------------------------------------------------------------ *
- * 5. Navigation
+ * 6. Navigation
  * ------------------------------------------------------------------ */
 
 /* Frosted bar once the nav detaches from the hero and floats over content. */
@@ -358,7 +388,7 @@ body::after {
 }
 
 /* ------------------------------------------------------------------ *
- * 6. Home page article cards
+ * 7. Home page article cards
  * ------------------------------------------------------------------ */
 
 #recent-posts .recent-post-item {
@@ -411,7 +441,7 @@ body::after {
 }
 
 /* ------------------------------------------------------------------ *
- * 7. Article content
+ * 8. Article content
  * ------------------------------------------------------------------ */
 
 #article-container {
@@ -496,7 +526,7 @@ body::after {
 }
 
 /* ------------------------------------------------------------------ *
- * 8. Aside widgets
+ * 9. Aside widgets
  * ------------------------------------------------------------------ */
 
 #aside-content .card-widget {
@@ -533,7 +563,7 @@ body::after {
 }
 
 /* ------------------------------------------------------------------ *
- * 9. Right-side buttons
+ * 10. Right-side buttons
  * ------------------------------------------------------------------ */
 
 #rightside > div > button,
@@ -555,7 +585,7 @@ body::after {
 }
 
 /* ------------------------------------------------------------------ *
- * 10. Footer
+ * 11. Footer
  * ------------------------------------------------------------------ */
 
 /* The footer used to be a dark glass slab carrying the theme's credits. Both
@@ -576,7 +606,7 @@ body::after {
 }
 
 /* ------------------------------------------------------------------ *
- * 11. Scrollbar and selection
+ * 12. Scrollbar and selection
  * ------------------------------------------------------------------ */
 
 * {
@@ -616,7 +646,7 @@ body::after {
 }
 
 /* ------------------------------------------------------------------ *
- * 12. Motion preferences
+ * 13. Motion preferences
  * ------------------------------------------------------------------ */
 
 @media (prefers-reduced-motion: reduce) {
