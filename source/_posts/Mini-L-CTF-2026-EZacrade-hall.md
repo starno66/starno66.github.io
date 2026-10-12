@@ -1,6 +1,7 @@
 ---
 title: "[Mini_L-CTF 2026]EZacrade hall Writeup"
 date: 2026-10-10 23:58:00
+mathjax: true
 categories:
   - pwn
 tags:
